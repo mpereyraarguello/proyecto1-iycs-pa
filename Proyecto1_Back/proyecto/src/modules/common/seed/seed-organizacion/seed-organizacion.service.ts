@@ -691,7 +691,7 @@ async seedPersonal() {
   // Ejecutar todos los seeds
   async runAllSeeds() {
     console.log('🚀 Iniciando todos los seeds...');
-
+    
 
     await this.seedProvincia();
     await this.seedPersonal();
