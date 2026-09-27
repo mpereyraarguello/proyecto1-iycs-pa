@@ -31,13 +31,13 @@ export function ProductoActions({
 }: Props) {
   return (
     <div className={`flex items-center gap-1 ${compact ? "justify-end" : ""}`}>
-      <ActionButton
+      {/*<ActionButton
         variant="info"
         title="Ver información"
         onClick={() => onInfo(producto.id)}
       >
         <Info size={16} />
-      </ActionButton>
+      </ActionButton> */}
 
       <ActionButton
         variant="edit"

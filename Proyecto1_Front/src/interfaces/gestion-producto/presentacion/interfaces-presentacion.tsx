@@ -11,6 +11,11 @@ export interface Presentacion {
 }
 
 
+export interface DtoConsultarPresentacion {
+  data: Presentacion[];
+  total: number;
+}
+
 export interface ConsultarPresentacion {
   id: number;
   denominacion: string;

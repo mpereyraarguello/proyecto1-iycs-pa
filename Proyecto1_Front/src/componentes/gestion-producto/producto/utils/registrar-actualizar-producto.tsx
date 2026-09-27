@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { CardContent, CardFooter } from "../../../ui/Card";
 import { Button } from "../../../ui/Button";
@@ -32,6 +32,7 @@ import PorcentajeInput from "../../../herramientas/formateo-de-campos/porcentaje
 import PresentacionesSelector from "../componentes/configuracion/presentacion-selector";
 import GenerarDenominacionButton from "../componentes/boton-generar-denom";
 import RegistrarActualizarPresentacionForm from "../../linea/utils/registrar-actualizar-presentacion";
+import ActualizarPrecioModal from "./actualizar-precio/actualizar-precio-modal";
 
 
 export default function RegistrarActualizarProductoForm({
@@ -58,13 +59,31 @@ export default function RegistrarActualizarProductoForm({
    
   });
 
+  
+
   const {
     handleSubmit,
     formState: { isSubmitting, errors },
     setValue,
     watch,
     setError,
+    control,
   } = methods;
+
+  const costo = useWatch({
+    control,
+    name: "costo",
+  });
+
+  const margen = useWatch({
+    control,
+    name: "margen",
+  });
+
+  const precio = useWatch({
+    control,
+    name: "precio",
+  });
 
   console.log("estos son los errores", errors);
 
@@ -77,8 +96,6 @@ export default function RegistrarActualizarProductoForm({
   const [presentaciones, setPresentaciones] = React.useState<SelectPresentacion[]>([]);
 
   //nuevo, para calcular el precio
-  const [precioCalculado, setPrecioCalculado] = useState<number>(0);
-  const [calculandoPrecio, setCalculandoPrecio] = useState(false);
 
   //pone a la denominación como vacia
   const [denominacionPresentacion, setDenominacionPresentacion] = useState(" ");
@@ -97,12 +114,16 @@ export default function RegistrarActualizarProductoForm({
   const [mostrarFormularioPresentacion, setMostrarFormularioPresentacion] =
   useState(false);
 
+  const [mostrarModalPrecio, setMostrarModalPrecio] = useState(false);
+  const [motivoActualizacionPrecio, setMotivoActualizacionPrecio] = useState("");
+
   const [itemProdAlternativoSinAgregar, setItemProdAlternativoSinAgregar] = useState(false);
 
   const stock = watch(`stock`);
   const stockMinimo = watch("stockMinimo");
 
   const utilizaStockMinimo = watch("utilizaStockMinimo");
+
 
   
 
@@ -141,6 +162,7 @@ export default function RegistrarActualizarProductoForm({
     const fetchData = async () => {
       try {
         if (producto) {
+          console.log("🔄 CAMBIÓ PRODUCTO, CARGANDO VALORES:", producto);
           setValue("lineaId", producto.linea.id || 0);
           setSelectedLinea(producto.linea);
 
@@ -157,6 +179,7 @@ export default function RegistrarActualizarProductoForm({
           setValue("stock", producto.stock || 0);
           setValue("costo", producto.costo || 0);
           setValue("margen", producto.margen || 0);
+          setValue("precio", producto.precio || 0);
           
           //setValue("oferta", producto.oferta || false);
       
@@ -178,40 +201,32 @@ export default function RegistrarActualizarProductoForm({
   const onSubmit = async (formData: FormValues) => {
     let response: ResponsePost;
 
-    try {
-      // ⚠️ Validar si hay ítems sin agregar
-      if (itemProdAlternativoSinAgregar) {
-        const mensaje = [
-          itemProdAlternativoSinAgregar ? "- Hay un producto alternativo sin agregar." : "",
-          "",
-          "¿Estás seguro de que querés registrar sin agregarlos?",
-        ]
-          .filter(Boolean)
-          .join("\n");
+      // el precio lo calcula el backend, no se envía
+      const { precio, ...datos } = formData;
 
-        const confirmar = window.confirm(mensaje);
+      try {
+        // ...tu validación de ítems sin agregar...
 
-        if (!confirmar) return; // el usuario canceló
-      }
+        if (producto) {
+          const payload = {
+            ...datos,
+            usuarioUpdatedId: usuarioId,
+             motivo: motivoActualizacionPrecio || undefined,
+          };
 
-      if (producto) {
-        const payload = {
-          ...formData,
-          usuarioUpdatedId: usuarioId,
-        };
+          response = await ProductoService.actualizar(producto.id, payload);
+        } else {
+          const payload = {
+            ...datos,
+            usuarioCreatedId: usuarioId,
+          };
 
-        response = await ProductoService.actualizar(producto.id, payload);
-      } else {
-        const payload = {
-          ...formData,
-          usuarioCreatedId: usuarioId,
-        };
+          response = await ProductoService.nuevo(payload);
+        }
 
-        response = await ProductoService.nuevo(payload);
-      }
+        await onSuccess(response.mensaje);
+        onClose();
 
-      await onSuccess(response.mensaje);
-      onClose();
     } catch (error) {
       const errorMessage = parseApiError(error);
 
@@ -281,14 +296,17 @@ export default function RegistrarActualizarProductoForm({
     }
 
     try {
-      setCalculandoPrecio(true);
+   
 
       const response = await ProductoService.calcularPrecio({
         costo: Number(costo),
         margen: Number(margen),
       });
 
-      setPrecioCalculado(response.precio);
+      setValue("precio", response.precio, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     } catch (error) {
       const errorMessage = parseApiError(error);
 
@@ -296,9 +314,7 @@ export default function RegistrarActualizarProductoForm({
         type: "manual",
         message: errorMessage,
       });
-    } finally {
-      setCalculandoPrecio(false);
-    }
+    } 
   };
 
   const handleEnterEnSelect = async (e: React.KeyboardEvent<HTMLInputElement>, select: string) => {
@@ -381,209 +397,173 @@ export default function RegistrarActualizarProductoForm({
         {/* Formulario */}
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 px-6 py-4">
-              {/* Primera fila */}
-              <div className="flex flex-col w-full gap-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 col-span-full">
-                  <div className="col-span-full flex items-end gap-2">
-                    <div className="flex-1">
-                      <FormInput
-                        name="denominacion"
-                        label="Denominación"
-                        placeholder="Ingresa la denominación"
-                        disabled={producto && producto.sistema > 0 ? true : false}
-                        onKeyDown={enterToObservacion}
-                        inputRef={denominacionProductoRef}
-                      />
-                    </div>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
+  {/* ================= COLUMNA IZQUIERDA ================= */}
+  <div className="flex flex-col gap-4">
+    <FormInput
+      name="denominacion"
+      label="Denominación"
+      placeholder="Ingresa la denominación"
+      disabled={producto && producto.sistema > 0 ? true : false}
+      onKeyDown={enterToObservacion}
+      inputRef={denominacionProductoRef}
+    />
 
-                    
+    {/* Costo, margen, precio y calcular en una fila */}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+      <PriceInput
+        name="costo"
+        label="Costo"
+        value={costo || 0}
+        onChange={(value) =>
+          setValue("costo", value, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+        }
+        maxDigits={9}
+        disabled={!!producto}
+      />
 
-                    
-                  </div>
+      <PorcentajeInput
+        name="margen"
+        label="Margen"
+        value={margen || 0}
+        onChange={(value) =>
+          setValue("margen", value, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+        }
+        disabled={!!producto}
+      />
 
-               
+      <PriceInput
+        name="precio"
+        label="Precio"
+        value={precio || 0}
+        onChange={() => {}}
+        maxDigits={9}
+        disabled={true}
+      />
 
-                  {/* <FormInput
-                    name="costo"
-                    label="Costo"
-                    placeholder="Ingresa el costo"
-                  />
+      <Button
+        type="button"
+        onClick={handleCalcularPrecio}
+        disabled={
+          !!producto ||
+          !watch("costo") ||
+          watch("margen") === undefined
+        }
+        className="w-full"
+      >
+        Calcular precio
+      </Button>
+    </div>
 
-                  <FormInput
-                    name="precio"
-                    label="Precio"
-                    placeholder="Ingresa el precio"
-                  />
+    {/* Actualización de precio debajo */}
+    <div>
+      <Button
+        type="button"
+        onClick={() => setMostrarModalPrecio(true)}
+        disabled={!producto}
+      >
+        Actualización de Precio
+      </Button>
+    </div>
 
-                  <FormInput
-                    name="porcentaje"
-                    label="Porcentaje"
-                    placeholder="Ingresa el porcentaje"
-                  /> */}
+    {/* Stock y stock crítico */}
+    <div className="flex flex-wrap items-end gap-4">
+      {producto ? (
+        <div className="min-w-[120px] flex-1">
+          <CantidadesInput
+            name="stock"
+            label="Stock"
+            value={stock || 0}
+            onChange={(value) => setValue("stock", Number(value))}
+            disabled={true}
+          />
+        </div>
+      ) : null}
 
-                  <PriceInput
-                    name="costo"
-                    label="Costo"
-                    value={watch("costo") || 0}
-                    onChange={(value) => setValue("costo", value, { shouldValidate: true })}
-                    maxDigits={9}
-                    disabled={producto && producto.sistema > 0 ? true : false}
-                  />
-                   <PorcentajeInput
-                    name="margen"
-                    label="Margen"
-                    value={watch("margen") || 0}
-                    onChange={(value) => setValue("margen", value, { shouldValidate: true })}
-                    disabled={producto && producto.sistema > 0 ? true : false}
-                  />
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <PriceInput
-                        name="precio"
-                        label="Precio"
-                        value={precioCalculado}
-                        onChange={() => {}}
-                        maxDigits={9}
-                        disabled={true}
-                      />
-                    </div>
+      <div className="flex items-end gap-2 min-w-[180px] flex-1">
+        <input
+          type="checkbox"
+          {...methods.register("utilizaStockMinimo")}
+          className="w-5 h-5 mb-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          disabled={producto && producto.sistema > 0 ? true : false}
+        />
 
-                    
-                  </div>
-                  <Button
-                      type="button"
-                      onClick={handleCalcularPrecio}
-                      disabled={!watch("costo") || watch("margen") === undefined}
-                    >
-                      Calcular precio
-                    </Button>
+        <CantidadesInput
+          name="stockMinimo"
+          label="Stock Crítico"
+          value={stockMinimo || 0}
+          onChange={(value) => setValue("stockMinimo", Number(value))}
+          disabled={utilizaStockMinimo ? false : true}
+        />
+      </div>
+    </div>
+  </div>
 
-                  <div className="flex-1 min-w-[120px]">
-                    {producto ? (
-                      <CantidadesInput
-                        name={`stock`}
-                        label="Stock"
-                        value={stock || 0}
-                        onChange={(value) => setValue(`stock`, Number(value))}
-                        disabled={true}
-                      />
-                    ) : null}
-                  </div>
-                </div>
+  {/* ================= COLUMNA DERECHA ================= */}
+  <div className="flex flex-col gap-2">
+    <LineasSelector
+      denominacionLinea={denominacionLinea}
+      setDenominacionLinea={setDenominacionLinea}
+      denominacionLineaRef={denominacionLineaRef}
+      selectLineaRef={selectLineaRef}
+      lineas={lineas}
+      selectedLinea={selectedLinea}
+      lineaId={watch("lineaId")}
+      disabled={producto && producto.sistema > 0}
+      errors={errors}
+      onEnterLinea={(e) => handleEnterEnSelect(e, "LINEA")}
+      onEnterDenominacion={enterToDenominacionMarca}
+      onLineaChange={(linea) => {
+        methods.setValue("lineaId", linea?.id || 0);
+        setLineaSeleccionada(linea as any);
+      }}
+      onAgregarLinea={() => setMostrarFormularioLinea(true)}
+    />
 
-                <div className="flex flex-wrap gap-6 w-full">
-                  <div className="flex items-center gap-2 flex-1 min-w-[140px]">
-                    <div className="col-span-full flex flex-wrap gap-4 mt-8">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          {...methods.register("utilizaStockMinimo")}
-                          className={` w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500`}
-                          disabled={producto && producto.sistema > 0 ? true : false}
-                        />
-                      </label>
-                    </div>
+    <MarcasSelector
+      denominacionMarca={denominacionMarca}
+      setDenominacionMarca={setDenominacionMarca}
+      denominacionMarcaRef={denominacionMarcaRef}
+      selectMarcaRef={selectMarcaRef}
+      marcas={marcas}
+      selectedMarca={selectedMarca}
+      marcaId={watch("marcaId")}
+      disabled={producto && producto.sistema > 0}
+      error={errors.marcaId?.message}
+      onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
+      onChangeMarca={(marca) => {
+        methods.setValue("marcaId", marca?.id || 0);
+      }}
+      onAgregarMarca={() => setMostrarFormularioMarca(true)}
+    />
 
-                    <CantidadesInput
-                      name={`stockMinimo`}
-                      label="Stock Crítico"
-                      value={stockMinimo || 0}
-                      onChange={(value) => setValue(`stockMinimo`, Number(value))}
-                      disabled={utilizaStockMinimo ? false : true}
-                    />
-                  </div>
+    <PresentacionesSelector
+      denominacionPresentacion={denominacionPresentacion}
+      setDenominacionPresentacion={setDenominacionPresentacion}
+      denominacionPresentacionRef={denominacionPresentacionRef}
+      selectPresentacionRef={selectPresentacionRef}
+      presentaciones={presentaciones}
+      selectedPresentacion={selectedPresentacion}
+      presentacionId={watch("presentacionId")}
+      disabled={producto && producto.sistema > 0}
+      error={errors.presentacionId?.message}
+      onEnterPresentacion={(e) => handleEnterEnSelect(e, "PRESENTACION")}
+      onChangePresentacion={(presentacion) => {
+        setSelectedPresentacion(presentacion);
+        methods.setValue("presentacionId", presentacion?.id || 0);
+      }}
+      onAgregarPresentacion={() => setMostrarFormularioPresentacion(true)}
+    />
 
-                  
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 min-w-[140px]">
-                    
-
-              
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col w-full gap-2">
-
-              <LineasSelector
-                denominacionLinea={denominacionLinea}
-                setDenominacionLinea={setDenominacionLinea}
-                denominacionLineaRef={denominacionLineaRef}
-                selectLineaRef={selectLineaRef}
-                lineas={lineas}
-                selectedLinea={selectedLinea}
-                lineaId={watch("lineaId")}
-                disabled={producto && producto.sistema > 0}
-                errors={errors}
-                onEnterLinea={(e) => handleEnterEnSelect(e, "LINEA")}
-                onEnterDenominacion={enterToDenominacionMarca}
-                onLineaChange={(linea) => {
-                  methods.setValue("lineaId", linea?.id || 0);
-                  setLineaSeleccionada(linea as any);
-                }}
-                onAgregarLinea={() => setMostrarFormularioLinea(true)}
-              />
-
-              <MarcasSelector
-                denominacionMarca={denominacionMarca}
-                setDenominacionMarca={setDenominacionMarca}
-                denominacionMarcaRef={denominacionMarcaRef}
-                selectMarcaRef={selectMarcaRef}
-                marcas={marcas}
-                selectedMarca={selectedMarca}
-                marcaId={watch("marcaId")}
-                disabled={producto && producto.sistema > 0}
-                error={errors.marcaId?.message}
-                onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
-                onChangeMarca={(marca) => {
-                  methods.setValue("marcaId", marca?.id || 0);
-                }}
-                onAgregarMarca={() => setMostrarFormularioMarca(true)}
-              />
-
-              <PresentacionesSelector
-                denominacionPresentacion={denominacionPresentacion}
-                setDenominacionPresentacion={setDenominacionPresentacion}
-                denominacionPresentacionRef={denominacionPresentacionRef}
-                selectPresentacionRef={selectPresentacionRef}
-                presentaciones={presentaciones}
-                selectedPresentacion={selectedPresentacion}
-                presentacionId={watch("presentacionId")}
-                disabled={producto && producto.sistema > 0}
-                error={errors.presentacionId?.message}
-                onEnterPresentacion={(e) =>
-                  handleEnterEnSelect(e, "PRESENTACION")
-                }
-                onChangePresentacion={(presentacion) => {
-                  setSelectedPresentacion(presentacion);
-
-                  methods.setValue(
-                    "presentacionId",
-                    presentacion?.id || 0
-                  );
-                }}
-                onAgregarPresentacion={() =>
-                  setMostrarFormularioPresentacion(true)
-                }
-              />
-
-
-
-              <GenerarDenominacionButton disabled={deshabilitarGenerar} />
-
-
-
-              </div>
-
-              {/* Segunda fila */}
-
-
-              <hr className="col-span-full my-2 border-gray-300" />
-
-              
-              
-            </CardContent>
+    <GenerarDenominacionButton disabled={deshabilitarGenerar} />
+  </div>
+</CardContent>
 
             {errors.root?.message && <div className="text-red-600 text-center mb-4">{String(errors.root.message)}</div>}
 
@@ -632,6 +612,35 @@ export default function RegistrarActualizarProductoForm({
               await handleBuscarPorDenominacion("PRESENTACION");
 
               onSuccess(mensaje);
+            }}
+          />
+        )}
+
+        {mostrarModalPrecio && producto && (
+          <ActualizarPrecioModal
+            producto={producto}
+            onClose={() => setMostrarModalPrecio(false)}
+            onSuccess={(mensaje, datos) => {
+              console.log("DATOS RECIBIDOS:", datos);
+
+              setValue("costo", datos.costo, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
+
+              setValue("margen", datos.margen, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
+
+              setValue("precio", datos.precio, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
+
+              setMotivoActualizacionPrecio(datos.motivo);
+              setMostrarModalPrecio(false);
+
             }}
           />
         )}

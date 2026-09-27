@@ -49,20 +49,6 @@ export default function TablaVistaPrevia({ productos }: Props) {
           </span>
         ),
       },
-      {
-        header: "Diferencia",
-        accessor: "diferencia",
-        flex: 0.5,
-        type: "text",
-        align: "right",
-        editable: false,
-        formatFunction: ({ value }) => (
-          <span className={value >= 0 ? "text-green-600" : "text-red-600"}>
-            {value > 0 ? "+" : ""}
-            {formatPrice(value, "ARS")}
-          </span>
-        ),
-      },
     ],
     [],
   );

@@ -54,7 +54,7 @@ export class ProductoService {
     private readonly superlineaService: SuperlineaService,
 
     //  Domain Services
-    private readonly intrinsicValidationService: ProductoIntrinsicValidationService,
+    private readonly intrinsicValidationService: ProductoIntrinsicValidationService, //
     private readonly validationService: ProductoValidationService,
     private readonly generadorDenominacionService: GeneradorDenominacionService,
 

@@ -1,24 +1,24 @@
 import { PlusCircle, Layers } from "lucide-react";
 import { Button } from "../../../ui/Button";
 import { CardHeader, CardTitle } from "../../../ui/Card";
-import { ImpresionForm } from "../../../herramientas/reutilizables/impresion-form";
+//import { ImpresionForm } from "../../../herramientas/reutilizables/impresion-form";
 import { EstadisticasSimples } from "../../../herramientas/reutilizables/estadisticas-simples";
 
 interface HeaderProps {
   entidadesTotales: number;
   datosLength: number;
-  handleImprimirTodo: () => void;
-  handleImprimirPagina: () => void;
-  paginaActual: number;
+  // handleImprimirTodo: () => void;
+  // handleImprimirPagina: () => void;
+  // paginaActual: number;
   openModal: () => void;
 }
 
 export const Header = ({
   entidadesTotales,
   datosLength,
-  handleImprimirTodo,
-  handleImprimirPagina,
-  paginaActual,
+  //handleImprimirTodo,
+  //handleImprimirPagina,
+  //paginaActual,
   openModal,
 }: HeaderProps) => {
   return (
@@ -32,13 +32,7 @@ export const Header = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <ImpresionForm
-          entityName="Líneas"
-          onImprimirTodo={handleImprimirTodo}
-          onImprimirPagina={handleImprimirPagina}
-          totalItems={entidadesTotales}
-          currentPage={paginaActual}
-        />
+      
         <Button
           className="bg-blue-500 hover:bg-blue-700 text-white flex items-center gap-1.5 px-3 py-2 rounded-lg shadow-sm"
           onClick={openModal}

@@ -213,18 +213,25 @@ export class Producto {
     return historial
   }
 
-  actualizarCosto(nuevoCosto:number, usuarioId?: number){
+  actualizarCosto(nuevoCosto:number,motivoAC:string, usuarioId?: number){
+    const precioViejo = this.precio.getValue();
     this.costo = nuevoCosto;
     this.updatedAt = new Date();
     this.usuarioUpdated = {id: usuarioId} as Usuario
     this.recalcularPrecio()
+    const nuevoHistorial = new HistorialPrecio(precioViejo, this.precio.getValue(), motivoAC, this, usuarioId);
+
+    return nuevoHistorial
   }
 
-  actualizarMargen(nuevoMargen:number, usuarioId?: number){
+  actualizarMargen(nuevoMargen:number, motivoAM:string, usuarioId?: number){
+    const precioViejo = this.precio.getValue();
     this.margen = nuevoMargen;
     this.updatedAt = new Date();
     this.usuarioUpdated = {id: usuarioId} as Usuario
     this.recalcularPrecio()
+    const nuevoHistorial = new HistorialPrecio(precioViejo, this.precio.getValue(), motivoAM, this, usuarioId);
+    return nuevoHistorial;
   }
 
   private recalcularPrecio(): void {
@@ -232,11 +239,14 @@ export class Producto {
     this.precio = Precio.crear(nuevoPrecio);
   }
 
-  actualizarCostoYMargen( nuevoCosto: number, nuevoMargen: number, usuarioId?: number) {
+  actualizarCostoYMargen( nuevoCosto: number, nuevoMargen: number, motivoACM:string, usuarioId?: number) {
+    const precioViejo = this.precio.getValue();
     this.costo = nuevoCosto;
     this.margen = nuevoMargen;
     this.updatedAt = new Date();
     this.usuarioUpdated = { id: usuarioId } as Usuario;
     this.recalcularPrecio();
+    const nuevoHistorial = new HistorialPrecio(precioViejo, this.precio.getValue(), motivoACM, this, usuarioId);
+    return nuevoHistorial;
   }
 }

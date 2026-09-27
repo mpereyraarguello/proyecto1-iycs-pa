@@ -3,7 +3,7 @@ import { Button } from "../../../ui/Button";
 import { CardHeader, CardTitle } from "../../../ui/Card";
 import { Input } from "../../../ui/Input";
 import { EstadisticasSimples } from "../../../herramientas/reutilizables/estadisticas-simples";
-import { ImpresionForm } from "../../../herramientas/reutilizables/impresion-form";
+//import { ImpresionForm } from "../../../herramientas/reutilizables/impresion-form";
 import {
   puedeActualizarPreciosMasivo,
   puedeAgregarProducto,
@@ -20,9 +20,9 @@ interface Props {
   onNuevo: () => void;
   total: number;
   mostrados: number;
-  paginaActual: number;
-  onImprimirTodo: () => void;
-  onImprimirPagina: () => void;
+  //paginaActual: number;  la comento porque solo la usa impresion-form y no la estamos usando por ahora
+  //onImprimirTodo: () => void;
+  //onImprimirPagina: () => void;
 }
 
 export function ProductosHeader({
@@ -34,9 +34,9 @@ export function ProductosHeader({
   onNuevo,
   total,
   mostrados,
-  paginaActual,
-  onImprimirTodo,
-  onImprimirPagina,
+  //paginaActual,
+  //onImprimirTodo,
+  //onImprimirPagina,
 }: Props) {
   console.log("¿PUEDE AGREGAR?:", puedeAgregarProducto(roles));
   return (
@@ -100,13 +100,14 @@ export function ProductosHeader({
       </div>
 
       <div className="flex gap-2">
-        <ImpresionForm
-          entityName="Productos"
-          onImprimirTodo={onImprimirTodo}
-          onImprimirPagina={onImprimirPagina}
-          totalItems={total}
-          currentPage={paginaActual}
-        />
+        {/*<ImpresionForm  este es el boton de imprimir
+         entityName="Productos"
+         onImprimirTodo={onImprimirTodo}
+         onImprimirPagina={onImprimirPagina}
+         totalItems={total}
+         currentPage={paginaActual}
+        >*/}
+        
         {puedeVerHistorialPrecios(roles) && (
           <BotonNavegacion ruta="/admin/historial-precios" texto="Historial de precios" icono={History} />
         )}

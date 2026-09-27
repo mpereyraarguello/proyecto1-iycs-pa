@@ -15,6 +15,7 @@ export interface Producto {
   costo?: number | null;
   precio?: number | null;
   margen?: number | null;
+  precio?: number | null;
  
   observacion: string | null;
   createdAt: string | null;

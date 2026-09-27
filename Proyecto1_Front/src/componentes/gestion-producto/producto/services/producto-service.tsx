@@ -154,13 +154,44 @@ const ProductoService = {
         payload,
         { headers }
       );
-
+      console.log('calcule el precio')
       return response.data;
     }catch (error) {
       console.error("Error al calcular precio:", error);
       throw error;
     }
     
+  },
+
+
+  registrarHistorialPrecio: async (
+    productoId: number,
+    payload: {
+      costo: number;
+      margen: number;
+      precio: number;
+      motivo: string;
+      usuarioId: number;
+    }
+  ) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = {
+        Authorization: token ? `Bearer ${token}` : "",
+        "Content-Type": "application/json",
+      };
+
+      const { data } = await axios.post(
+        `${apiUrl}/producto/${productoId}/historial-precio`,
+        payload,
+        { headers }
+      );
+
+      return data;
+    } catch (error) {
+      console.error("Error al registrar historial de precio:", error);
+      throw error;
+    }
   },
 };
 

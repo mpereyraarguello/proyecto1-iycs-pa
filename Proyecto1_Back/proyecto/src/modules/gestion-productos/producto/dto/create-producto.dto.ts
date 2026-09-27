@@ -12,6 +12,7 @@ import {
   IsEnum,
   ValidateNested,
   Min,
+  Max,
 } from 'class-validator';
 import { AlicuotaIva } from 'src/modules/organizacion/enums/alicuota-iva.enum';
 import { CreatePresentacionDto } from '../../presentacion/dto/create-presentacion.dto';
@@ -104,9 +105,10 @@ export class CreateProductoDto {
   presentacionId:number;
 
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'El margen es obligatorio.' })
   @IsNumber()
   @Min(0, { message: 'El margen no puede ser negativo.' }) //CA-001.1
+  @Max(999, { message: 'El margen no puede ser mayor a 999.' })
   margen: number;
 
   createdAt?: Date;

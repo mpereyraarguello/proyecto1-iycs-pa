@@ -114,6 +114,9 @@ export class ProductoIntrinsicValidationService {
     if (margen !== undefined && margen < 0) {
       throw new BadRequestException('El margen no puede ser negativo');
     }
+    if (margen !== undefined && margen > 999) {
+      throw new BadRequestException('El margen no puede superar 999%');
+    }
   }
 
   private validarAlicuotaIva(alicuotaIva: number): void {

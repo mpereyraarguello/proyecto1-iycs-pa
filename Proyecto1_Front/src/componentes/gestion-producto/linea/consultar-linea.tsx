@@ -289,13 +289,7 @@ export default function ConsultarSuperlinea() {
                 </div>
                 {/* Contenedor de botones */}
                 <div className="flex items-center gap-2">
-                  <ImpresionForm
-                    entityName="Líneas"
-                    onImprimirTodo={handleImprimirTodo}
-                    onImprimirPagina={handleImprimirPagina}
-                    totalItems={entidadesTotales}
-                    currentPage={paginaActual}
-                  />
+                 
                   <Button
                     className="bg-blue-500 hover:bg-blue-700 text-white flex items-center px-4 py-3"
                     onClick={openModal}

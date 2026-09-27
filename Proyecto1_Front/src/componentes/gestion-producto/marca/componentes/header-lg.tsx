@@ -3,7 +3,7 @@ import { Button } from "../../../ui/Button";
 import { CardHeader, CardTitle } from "../../../ui/Card";
 import { ImpresionForm } from "../../../herramientas/reutilizables/impresion-form";
 import { SelectContentUI, SelectItemUI, SelectTriggerUI, SelectUI, SelectValueUI } from "../../../ui/Select";
-import { EstadoPresupuestoBusqueda } from "../../../../interfaces/gestion-venta/presupuesto-venta/interfaces-presupuesto-venta";
+//import { EstadoPresupuestoBusqueda } from "../../../../interfaces/gestion-venta/presupuesto-venta/interfaces-presupuesto-venta";
 import { EstadisticasSimples } from "../../../herramientas/reutilizables/estadisticas-simples";
 
 interface HeaderLgProps {

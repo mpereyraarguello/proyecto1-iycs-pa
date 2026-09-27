@@ -6,6 +6,8 @@ import {
   IsString,
   MaxLength,
   Matches,
+  IsEmpty,
+  IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -27,4 +29,7 @@ export class UpdateProductoDto extends PartialType(CreateProductoDto) {
   usuarioUpdatedId: number;
 
   updatedAt: Date;
+
+  @IsOptional()
+  motivo?: string;
 }

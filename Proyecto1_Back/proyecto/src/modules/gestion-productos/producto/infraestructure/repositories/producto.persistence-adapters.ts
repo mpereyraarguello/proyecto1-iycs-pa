@@ -174,6 +174,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     const repo = this.uow.getRepository(Producto);
     try {
       const entity = await this.findOne(id);
+      let historial: HistorialPrecio | undefined;
 
       if (!entity) {
         throw new NotFoundException(`EL prodcuto con ID ${id} no encontrada`);
@@ -181,6 +182,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       const {
         costo,
         margen,
+        motivo,
         ...dataSinItems
       } = data;
 
@@ -191,19 +193,22 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       });
 
       if (costo !== undefined && margen !== undefined) {
-        entity.actualizarCostoYMargen(
+        historial = entity.actualizarCostoYMargen(
           costo,
           margen,
+          motivo || 'Actualización de costo y margen',
           usuario.id,
         );
       } else if (costo !== undefined) {
-        entity.actualizarCosto(
+        historial = entity.actualizarCosto(
           costo,
+          motivo || 'Actualización de costo',
           usuario.id,
         );
       } else if (margen !== undefined) {
-        entity.actualizarMargen(
+        historial = entity.actualizarMargen(
           margen,
+          motivo || 'Actualización de margen',
           usuario.id,
         );
       }
@@ -211,6 +216,10 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       entity.usuarioUpdated = usuario; 
       const entityActualizada = await repo.save(entity);
 
+      if(historial){
+        const repoHistorial = this.uow.getRepository(HistorialPrecio)
+        await repoHistorial.save(historial);
+      }
 
       return entityActualizada;
     } catch (error) {
