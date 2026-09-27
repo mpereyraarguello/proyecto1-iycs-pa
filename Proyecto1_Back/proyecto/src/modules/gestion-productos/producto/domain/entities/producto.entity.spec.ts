@@ -30,7 +30,7 @@ describe('Producto.actualizarPrecioconHistorial (CP-007-02)', () => {
     jest.restoreAllMocks();
   });
 
-  it('registra un historial con precio anterior $1150, nuevo $1300, fecha y motivo', () => {
+  it('registra un historial con precio anterior $1150, nuevo $1300, fecha y motivo "Aumento de costo del proveedor"', () => {
     // Dado un producto con precio actual $1150
     const producto = crearProducto(1150);
 
